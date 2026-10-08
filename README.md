@@ -14,6 +14,14 @@ Be Human 101 explores expressive robotic behavior using a StackChan-style robot,
 
 **Publication scope:** planned modules and examples for face rendering, Gemini integration, and sensor connectivity. Full firmware, SCServo library, local credentials, and experimental backups are not intended for inclusion in this repository.
 
+## Demo video
+
+Watch the current StackChan Be Human 101 prototype in action:
+
+https://github.com/user-attachments/assets/5e5cda26-d87c-40f0-9ef6-9c163763b3af
+
+> Footage shows an experimental prototype; the face and emotion behaviors are still being refined.
+
 ## Highlights
 
 ### Expressive face — 22 emotion states
