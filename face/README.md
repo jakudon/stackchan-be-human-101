@@ -58,3 +58,11 @@ Custom expression and integration modifications: **Jakudon — Be Human 101 (202
 Upstream firmware: **[taranton/stackchan-gemini-firmware](https://github.com/taranton/stackchan-gemini-firmware)**, MIT License. Preserve the upstream copyright and license notices when distributing derived code. M5Stack BSP and other dependencies are governed by their respective licenses. The GPL-licensed SCServo library is **not included** in this repository.
 
 This is a source patch for research and integration, not a complete firmware distribution.
+
+## Build verification
+
+- **2026-10-08:** The project maintainer reported `[SUCCESS]` from `py -m platformio run -e m5stack-cores3` in their local upstream-derived firmware project.
+- This confirms a successful **local firmware build**, not an independently reproduced build of this repository or a clean-install integration test.
+- The uploaded `EmotionController.cpp` and `EmotionController.h` are published under `reference/`. Their exact integration into a fresh upstream checkout remains unverified.
+- Hardware behavior, all 22 expression visuals, and repeated camera-preview transitions have not been validated by this build result alone.
+
