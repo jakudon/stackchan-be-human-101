@@ -12,6 +12,16 @@ This checklist helps maintainers test the **Be Human 101 face renderer** in an u
 
 This repository **does not contain a complete firmware or a standalone build project**.
 
+## Static source validation
+
+From the repository root, run:
+
+```powershell
+python tests/check_face_source.py
+```
+
+This checks that the published header and source define the expected 22 LCD modes and controller methods. It does **not** compile the firmware or exercise hardware.
+
 ## Build
 
 In the firmware project's VS Code terminal:
