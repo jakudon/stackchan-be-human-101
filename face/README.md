@@ -13,8 +13,35 @@ The patch includes custom cyan eyes, expressive eye shapes, solid animated speak
 
 - The patch is **not** a standalone firmware, and is not automatically compatible with arbitrary firmware versions.
 - It targets the `src/EmotionController.cpp` and `src/EmotionController.h` structure of the user's upstream-derived firmware. The full original source and build environment are **not included**.
+- The full customized controller source and matching header are also available in [`reference/`](reference/). They require upstream libraries and hardware initialization.
 - The patch contains only face-related source changes. Gemini tool schemas, camera preview wiring, and sensor gateway implementation are not part of this patch.
 - Some animation and camera hold/release behavior remains under testing. No stable release is claimed.
+
+## Quick integration example
+
+Copy both files from `face/reference/` into the `src/` directory of a **compatible upstream-derived StackChan firmware project**. These files require `Arduino.h`, `M5StackChan.h`, and `M5Unified.h` and are not a standalone PlatformIO project.
+
+```cpp
+#include "EmotionController.h"
+
+EmotionController face;
+
+void setup() {
+  // Initialize M5StackChan, display, power, and RGB hardware using
+  // the upstream firmware's normal startup sequence BEFORE begin().
+  face.begin();
+  face.setEmotion("happy");
+}
+
+void loop() {
+  face.loop();
+}
+
+// During camera preview: face.holdDisplay();
+// After preview ends: face.releaseDisplay();
+```
+
+**Important:** This snippet is an API illustration, not a complete flashable sketch. In the real firmware, keep the upstream hardware initialization and scheduler; do not add a second `setup()`/`loop()`.
 
 ## Integration outline
 
