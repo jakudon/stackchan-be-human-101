@@ -54,7 +54,7 @@ The project's research direction includes long- and short-term memory, personali
 
 ## Source code and installation
 
-Standalone face/integration modules and installation guidance will be added after extracting the relevant code and reviewing dependencies, credentials, and license obligations. This is **not** a ready-to-flash firmware distribution.
+**Available now:** [22-emotion face renderer source patch](face/patches/EmotionController-22-emotions.patch), [emotion vocabulary header](face/EmotionModes.h), [face integration notes](face/README.md), and [AI/sensor architecture notes](integrations/README.md). The face patch is a diff against an upstream-derived firmware version, **not** a standalone ready-to-flash firmware. Gemini gateway and ESP8266 sensor implementations are not yet published.
 
 ## Support development
 
