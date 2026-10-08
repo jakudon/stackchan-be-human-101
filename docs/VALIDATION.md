@@ -65,6 +65,17 @@ Record:
 
 Do not share Wi-Fi credentials, API keys, Cloudflare secrets, or full unreviewed firmware backups.
 
+## Maintainer on-device test report — 2026-10-08
+
+- **Device:** StackChan K151 / M5Stack CoreS3
+- **Build:** Maintainer reported PlatformIO `[SUCCESS]` for the temporary emotion-test firmware.
+- **Flash:** Maintainer reported successful upload to the device.
+- **Test:** Temporary emotion test mode cycled through all 22 expression modes, approximately 3 seconds each.
+- **Result:** **PASS (maintainer-reported):** All 22 modes appeared in the on-device cycle.
+- **Evidence:** Direct maintainer observation; no video or serial log attached.
+- **Not yet verified:** Detailed correctness of each expression, long-duration stability, LED/audio interactions, camera preview handoff, and clean integration of the published reference files into a fresh firmware checkout.
+- **Release note:** The temporary test mode must be disabled and the regular firmware rebuilt/reflashed for normal Gemini operation.
+
 ## Release criteria
 
 A reusable release requires a clean integration build, on-device verification of all 22 modes, dependency and license review, and documented installation steps. Until then, this is a **reference integration**, not a stable plug-and-play release.
