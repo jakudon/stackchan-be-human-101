@@ -54,7 +54,9 @@ The project's research direction includes long- and short-term memory, personali
 
 ## Source code and installation
 
-**Available now:** [22-emotion face renderer source patch](face/patches/EmotionController-22-emotions.patch), [emotion vocabulary header](face/EmotionModes.h), [face integration notes](face/README.md), and [AI/sensor architecture notes](integrations/README.md). The face patch is a diff against an upstream-derived firmware version, **not** a standalone ready-to-flash firmware. Gemini gateway and ESP8266 sensor implementations are not yet published.
+**Development setup:** [VS Code + PlatformIO installation and build guide](face/README.md#development-environment-vs-code--platformio). **Hardware validation:** [CoreS3 test checklist](docs/VALIDATION.md).
+
+**Available now:** [full face controller source pair](face/reference/), [22-emotion face renderer source patch](face/patches/EmotionController-22-emotions.patch), [emotion vocabulary header](face/EmotionModes.h), [face integration notes](face/README.md), and [AI/sensor architecture notes](integrations/README.md). The face patch is a diff against an upstream-derived firmware version, **not** a standalone ready-to-flash firmware. Gemini gateway and ESP8266 sensor implementations are not yet published.
 
 ## Support development
 
