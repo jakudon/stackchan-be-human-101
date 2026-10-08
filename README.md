@@ -58,10 +58,8 @@ Built around the StackChan / M5Stack ecosystem and other upstream open-source co
 
 ---
 
-## ภาษาไทย
+## Upstream attribution and licensing
 
-**Be Human 101** คือโปรเจกต์ทดลองพัฒนาหุ่นยนต์ StackChan ให้มีบุคลิกและการแสดงออกที่เป็นธรรมชาติมากขึ้น โดยเน้นหน้าตาแสดงอารมณ์ 22 รูปแบบ การสนทนากับ Gemini Live การใช้กล้อง และการรับข้อมูลจากเซนเซอร์ภายนอกผ่าน Cloudflare Gateway
+This project is based on [StackChan Gemini Firmware by taranton](https://github.com/taranton/stackchan-gemini-firmware), licensed under the MIT License. Extended and customized by Jakudon for Be Human 101.
 
-ขณะนี้ยังอยู่ระหว่างพัฒนาและทดสอบ การเปิดเผยซอร์สโค้ดและคู่มือติดตั้งจะดำเนินการหลังตรวจสอบข้อมูลลับ สิทธิ์ของโค้ดต้นฉบับ และความพร้อมของเฟิร์มแวร์
-
-**ร่วมสนับสนุน:** กด Star โปรเจกต์ เสนอความคิดเห็น หรือช่วยทดสอบได้ ช่องทางรับบริจาคจะเพิ่มเมื่อพร้อมใช้งาน
+The upstream copyright notice and MIT license must be preserved in source distributions. Additional bundled components may have their own license requirements. This project is independent and is not endorsed by the upstream maintainers.
