@@ -17,6 +17,25 @@ The patch includes custom cyan eyes, expressive eye shapes, solid animated speak
 - The patch contains only face-related source changes. Gemini tool schemas, camera preview wiring, and sensor gateway implementation are not part of this patch.
 - Some animation and camera hold/release behavior remains under testing. No stable release is claimed.
 
+## Development environment: VS Code + PlatformIO
+
+The maintainer builds the StackChan CoreS3 firmware using **Visual Studio Code with PlatformIO**. This is **not** an Arduino IDE sketch and this repository does not contain a standalone `platformio.ini`.
+
+1. Install [Visual Studio Code](https://code.visualstudio.com/).
+2. Install the **PlatformIO IDE** extension in VS Code.
+3. Obtain a compatible upstream firmware checkout with its original `platformio.ini`, dependencies, and StackChan board support.
+4. Open the **firmware project folder** (the folder containing `platformio.ini`) in VS Code.
+5. Review the existing `src/EmotionController.cpp` and `src/EmotionController.h` before integrating the reference files from this repository. Keep backups and do not overwrite unrelated firmware changes.
+6. In the VS Code integrated terminal, run:
+
+```powershell
+py -m platformio run -e m5stack-cores3
+```
+
+Alternatively, use PlatformIO's **Build** command after selecting the `m5stack-cores3` environment. The `py -m platformio` command requires a working Python/PlatformIO installation; the VS Code extension may manage its own PlatformIO environment.
+
+**Hardware target:** M5Stack CoreS3 / StackChan K151. A successful build does not prove correct behavior on hardware. Flashing and testing should follow the firmware project's own instructions. Do not flash this repository as-is.
+
 ## Quick integration example
 
 Copy both files from `face/reference/` into the `src/` directory of a **compatible upstream-derived StackChan firmware project**. These files require `Arduino.h`, `M5StackChan.h`, and `M5Unified.h` and are not a standalone PlatformIO project.
