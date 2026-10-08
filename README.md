@@ -1,10 +1,18 @@
 # StackChan — Be Human 101
 
-**An experimental, community-driven AI robot project by [Jakudon](https://github.com/jakudon).**
+**Custom Face & Emotion System and AI integrations developed and customized by [Jakudon](https://github.com/jakudon).**
 
-Be Human 101 explores expressive robotic behavior using a StackChan-style robot, real-time AI conversations, an animated face, camera input, and external environmental sensors. This repository is being prepared for a public open-source release.
+Be Human 101 explores expressive robotic behavior using a StackChan-style robot, real-time AI conversations, an animated face, camera input, and external environmental sensors. This repository focuses on the custom expression layer and integration examples rather than redistributing the entire upstream firmware.
 
 > **Project status:** Active development. The features below describe the current working prototype and planned integrations; this is not yet a packaged, reproducible public firmware release.
+
+## What is original and what is upstream
+
+**Jakudon / Be Human 101 contributions:** custom face rendering and 22 emotion modes, expression behavior, and extensions connecting camera, AI tools, and external sensor data. These are modifications and additions developed on top of an existing firmware architecture, **not a claim that the entire firmware was written from scratch**.
+
+**Upstream foundation:** [StackChan Gemini Firmware by taranton](https://github.com/taranton/stackchan-gemini-firmware), plus the StackChan / M5Stack ecosystem. Copyright and license notices of upstream contributors remain applicable.
+
+**Publication scope:** planned modules and examples for face rendering, Gemini integration, and sensor connectivity. Full firmware, SCServo library, local credentials, and experimental backups are not intended for inclusion in this repository.
 
 ## Highlights
 
@@ -46,7 +54,7 @@ The project's research direction includes long- and short-term memory, personali
 
 ## Source code and installation
 
-The firmware and installation instructions will be added after configuration files, credentials, upstream licenses, and hardware-specific settings have been reviewed. Please do not treat this README as a ready-to-flash release.
+Standalone face/integration modules and installation guidance will be added after extracting the relevant code and reviewing dependencies, credentials, and license obligations. This is **not** a ready-to-flash firmware distribution.
 
 ## Support development
 
@@ -54,12 +62,8 @@ If you find the project interesting, you can support its development by starring
 
 ## Credits and licensing
 
-Built around the StackChan / M5Stack ecosystem and other upstream open-source components. Upstream authors retain their respective rights. A project license and third-party notices will be published after reviewing the incorporated source and its license requirements.
+- **Jakudon (2026):** Be Human 101 custom face, emotion behavior, and integration modifications.
+- **[taranton — StackChan Gemini Firmware](https://github.com/taranton/stackchan-gemini-firmware):** upstream firmware foundation, MIT License.
+- **M5Stack / StackChan BSP:** upstream hardware support components, subject to their respective notices.
 
----
-
-## Upstream attribution and licensing
-
-This project is based on [StackChan Gemini Firmware by taranton](https://github.com/taranton/stackchan-gemini-firmware), licensed under the MIT License. Extended and customized by Jakudon for Be Human 101.
-
-The upstream copyright notice and MIT license must be preserved in source distributions. Additional bundled components may have their own license requirements. This project is independent and is not endorsed by the upstream maintainers.
+The original MIT copyright and license notices must be retained for reused upstream code. The upstream firmware and BSP use MIT licensing; the bundled SCServo library has a GPL-3.0 license, so its code is **excluded from the planned published modules** pending dependency review. Final licensing for any extracted code will be verified before publication. This independent project is not endorsed by upstream maintainers.
