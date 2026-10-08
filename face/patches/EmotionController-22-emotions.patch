@@ -1,0 +1,563 @@
+diff --git a/src/EmotionController.cpp b/src/EmotionController.cpp
+index 20b6507..6f7c902 100644
+--- a/src/EmotionController.cpp
++++ b/src/EmotionController.cpp
+@@ -27,6 +27,18 @@ void EmotionController::begin() {
+   setEmotion("neutral");
+ }
+ 
++void EmotionController::holdDisplay() {
++  displayHold_ = true;
++  Serial.println("Emotion: display hold");
++}
++
++void EmotionController::releaseDisplay() {
++  if (!displayHold_) return;
++  displayHold_ = false;
++  lastFaceMs_ = 0;
++  Serial.println("Emotion: display released");
++}
++
+ bool EmotionController::setEmotion(const String& emotion) {
+   String normalized;
+   Mode next = parseMode(emotion, normalized);
+@@ -59,7 +71,7 @@ void EmotionController::loop() {
+   uint32_t faceInterval = (mode_ == Mode::Speaking) ? kSpeakingFaceIntervalMs : kFaceIntervalMs;
+   if (!sleepDisplayOff_ && (lastFaceMs_ == 0 || now - lastFaceMs_ >= faceInterval)) {
+     lastFaceMs_ = now;
+-    renderFace();
++    if (!displayHold_) renderFace();
+   }
+   if (lastFrameMs_ != 0 && now - lastFrameMs_ < kFrameIntervalMs) return;
+   lastFrameMs_ = now;
+@@ -72,7 +84,19 @@ void EmotionController::loop() {
+     case Mode::Thinking:  renderThinking(); break;
+     case Mode::Looking:   renderLooking(); break;
+     case Mode::Happy:     renderHappy(); break;
++    case Mode::Excited:   renderHappy(); break;
++    case Mode::Laughing:  renderHappy(); break;
++    case Mode::Sad:       renderNeutral(); break;
++    case Mode::Crying:    renderNeutral(); break;
++    case Mode::Surprised: renderListening(); break;
++    case Mode::Scared:    renderError(); break;
+     case Mode::Angry:     renderAngry(); break;
++    case Mode::Annoyed:   renderAngry(); break;
++    case Mode::Bored:     renderNeutral(); break;
++    case Mode::Embarrassed: renderHappy(); break;
++    case Mode::Curious:   renderLooking(); break;
++    case Mode::Dizzy:     renderError(); break;
++    case Mode::Love:      renderHappy(); break;
+     case Mode::Found:     renderFound(); break;
+     case Mode::Error:     renderError(); break;
+     case Mode::Sleep:
+@@ -90,7 +114,19 @@ EmotionController::Mode EmotionController::parseMode(const String& emotion, Stri
+   if (e == "think" || e == "thinking") { normalized = "thinking"; return Mode::Thinking; }
+   if (e == "look" || e == "looking" || e == "seeing" || e == "camera") { normalized = "looking"; return Mode::Looking; }
+   if (e == "happy" || e == "joy" || e == "smile") { normalized = "happy"; return Mode::Happy; }
++  if (e == "excited" || e == "exciting") { normalized = "excited"; return Mode::Excited; }
++  if (e == "laugh" || e == "laughing") { normalized = "laughing"; return Mode::Laughing; }
++  if (e == "sad" || e == "unhappy") { normalized = "sad"; return Mode::Sad; }
++  if (e == "cry" || e == "crying") { normalized = "crying"; return Mode::Crying; }
++  if (e == "surprised" || e == "surprise" || e == "shocked") { normalized = "surprised"; return Mode::Surprised; }
++  if (e == "scared" || e == "afraid" || e == "fear") { normalized = "scared"; return Mode::Scared; }
+   if (e == "angry" || e == "mad") { normalized = "angry"; return Mode::Angry; }
++  if (e == "annoyed" || e == "annoying") { normalized = "annoyed"; return Mode::Annoyed; }
++  if (e == "bored" || e == "boring") { normalized = "bored"; return Mode::Bored; }
++  if (e == "embarrassed" || e == "shy") { normalized = "embarrassed"; return Mode::Embarrassed; }
++  if (e == "curious" || e == "curiosity") { normalized = "curious"; return Mode::Curious; }
++  if (e == "dizzy") { normalized = "dizzy"; return Mode::Dizzy; }
++  if (e == "love" || e == "loving") { normalized = "love"; return Mode::Love; }
+   if (e == "found" || e == "success") { normalized = "found"; return Mode::Found; }
+   if (e == "error" || e == "confused") { normalized = "error"; return Mode::Error; }
+   if (e == "sleep" || e == "sleeping") { normalized = "sleep"; return Mode::Sleep; }
+@@ -174,187 +210,308 @@ void EmotionController::refresh() {
+ }
+ 
+ void EmotionController::drawLabel() {
+-  renderFace();
++  if (!displayHold_) renderFace();
+ }
+ 
+ void EmotionController::renderFace() {
+   auto& display = M5StackChan.Display();
+   static M5Canvas canvas(&display);
+   static bool canvasReady = false;
++
++  const int w = display.width();
++  const int h = display.height();
++
+   if (!canvasReady) {
+     canvas.setColorDepth(8);
+-    canvasReady = canvas.createSprite(display.width(), display.height()) != nullptr;
++    canvasReady = canvas.createSprite(w, h) != nullptr;
+     if (!canvasReady) {
+-      Serial.println("Emotion: face canvas allocation failed");
++      Serial.println("Emotion: canvas allocation failed");
+       return;
+     }
+   }
+ 
+   auto& d = canvas;
+-  const int w = display.width();
+-  const int h = display.height();
+   const int cx = w / 2;
+   const int cy = h / 2;
++
+   d.fillSprite(TFT_BLACK);
+ 
+-  uint16_t eyeColor = TFT_CYAN;
+-  uint16_t accent = TFT_DARKCYAN;
+-  bool closed = false;
+-  int pupilDx = triWave(frame_ * 3, 4);
+-  int pupilDy = 0;
+-  int mouthW = 76;
+-  int mouthH = 8;
+-  int mouthY = cy + 44;
+-  bool smile = false;
+-  bool frown = false;
+-  bool talking = false;
+-  uint8_t talkShape = 0;
++  // Custom face expression geometry and animation
++  const uint16_t cyan = 0x07FF;       // Bright Vivid Cyan
++  const uint16_t cyanSoft = 0x567F;   // Soft Cyan
++  const uint16_t blushPink = 0xFD14;  // Pink
++
++  // Custom face expression geometry and animation
++  const int eyeSpacing = 58;
++  const int lx = cx - eyeSpacing;
++  const int rx = cx + eyeSpacing;
++  // Custom face expression geometry and animation
++  // Custom face expression geometry and animation
++
++  // -------------------------------------------------------------
++  // Eilik Accurate Primitives
++  // -------------------------------------------------------------
++
++  // Custom face expression geometry and animation
++  auto drawEilikEye = [&](int x, int y, int ew, int eh) {
++    d.fillRoundRect(x - ew / 2, y - eh / 2, ew, eh, ew / 2, cyan);
++  };
++
++  // Custom face expression geometry and animation
++  auto drawHappyArc = [&](int x, int y, int ew, int eh) {
++    d.fillRoundRect(x - ew / 2, y - eh / 2, ew, eh, eh / 2, cyan);
++    d.fillRoundRect(x - ew / 2, y, ew, eh, eh / 2, TFT_BLACK);
++  };
++
++  // Custom face expression geometry and animation
++  auto drawSqueezeEye = [&](int x, int y, bool isLeft) {
++    const int len = 18;
++    const int thick = 5;
++    if (isLeft) {
++      for (int t = -thick/2; t <= thick/2; t++) {
++        d.drawLine(x - len, y - 10 + t, x + 6, y + t, cyan);
++        d.drawLine(x - len, y + 10 + t, x + 6, y + t, cyan);
++      }
++      d.fillCircle(x + 6, y, thick/2 + 1, cyan);
++      d.fillCircle(x - len, y - 10, thick/2 + 1, cyan);
++      d.fillCircle(x - len, y + 10, thick/2 + 1, cyan);
++    } else {
++      for (int t = -thick/2; t <= thick/2; t++) {
++        d.drawLine(x + len, y - 10 + t, x - 6, y + t, cyan);
++        d.drawLine(x + len, y + 10 + t, x - 6, y + t, cyan);
++      }
++      d.fillCircle(x - 6, y, thick/2 + 1, cyan);
++      d.fillCircle(x + len, y - 10, thick/2 + 1, cyan);
++      d.fillCircle(x + len, y + 10, thick/2 + 1, cyan);
++    }
++  };
++
++  // Custom face expression geometry and animation
++  auto drawAngryDroplet = [&](int x, int y, bool isLeft) {
++    drawEilikEye(x, y, 48, 56);
++    if (isLeft) {
++      d.fillTriangle(x - 26, y - 30, x + 26, y - 30, x + 26, y + 2, TFT_BLACK);
++    } else {
++      d.fillTriangle(x + 26, y - 30, x - 26, y - 30, x - 26, y + 2, TFT_BLACK);
++    }
++  };
++
++  // Custom face expression geometry and animation
++  // Custom face expression geometry and animation
++  auto drawTalkingBlobMouth = [&](int mw, int mh) {
++    d.fillRoundRect(cx - mw / 2, mouthY - mh / 2, mw, mh, mh / 2, cyan);
++  // Custom face expression geometry and animation
++    d.fillCircle(cx - mw / 4, mouthY, mh / 2, cyan);
++    d.fillCircle(cx + mw / 4, mouthY, mh / 2, cyan);
++  };
++
++  // Custom face expression geometry and animation
++  auto drawHeart = [&](int x, int y, int sz) {
++    int r = sz / 4;
++    d.fillCircle(x - r, y - r, r, cyan);
++    d.fillCircle(x + r, y - r, r, cyan);
++    d.fillTriangle(x - sz / 2, y - r + 1, x + sz / 2, y - r + 1, x, y + sz / 2, cyan);
++  };
++
++  // -------------------------------------------------------------
++  // Custom face expression geometry and animation
++  // -------------------------------------------------------------
+ 
+   switch (mode_) {
+-    case Mode::Listening:
+-      eyeColor = TFT_SKYBLUE;
+-      accent = TFT_BLUE;
+-      pupilDx = triWave(frame_ * 6, 10);
+-      mouthW = 44;
+-      mouthH = 5;
++
++  // Custom face expression geometry and animation
++    case Mode::Neutral: {
++      bool blink = ((frame_ / 45) % 16) == 0;
++      if (!blink) {
++        drawEilikEye(lx, eyeY, 48, 60);
++        drawEilikEye(rx, eyeY, 48, 60);
++      } else {
++  // Custom face expression geometry and animation
++        d.fillRoundRect(lx - 22, eyeY, 44, 6, 3, cyan);
++        d.fillRoundRect(rx - 22, eyeY, 44, 6, 3, cyan);
++      }
+       break;
+-    case Mode::Speaking:
+-      eyeColor = TFT_GREENYELLOW;
+-      accent = TFT_GREEN;
+-      talking = true;
+-      // Advance viseme shapes faster than the LCD redraw cadence. This makes
+-      // the mouth feel closer to speech speed without increasing display load
+-      // (28ms redraw cadence previously caused audible voice stutter).
+-      talkShape = (frame_ * 2) % 8;
+-      mouthW = 56 + ((talkShape % 3) * 14);
+-      mouthH = 10 + (uint8_t)wave8(frame_ * 46, 4, 34);
+-      pupilDx = triWave(frame_ * 8, 7);
+-      pupilDy = triWave(frame_ * 5, 3);
++    }
++
++  // Custom face expression geometry and animation
++    case Mode::Speaking: {
++      drawEilikEye(lx, eyeY, 48, 60);
++      drawEilikEye(rx, eyeY, 48, 60);
++
++  // Custom face expression geometry and animation
++      const int talkW[] = {24, 38, 48, 34};
++      const int talkH[] = {12, 22, 28, 16};
++      int step = (frame_ / 4) % 4;
++      drawTalkingBlobMouth(talkW[step], talkH[step]);
+       break;
+-    case Mode::Thinking:
+-      eyeColor = TFT_YELLOW;
+-      accent = TFT_ORANGE;
+-      pupilDx = triWave(frame_ * 4, 14);
+-      pupilDy = triWave(frame_ * 2, 4);
+-      mouthW = 34;
+-      mouthH = 5;
+-      mouthY = cy + 48;
++    }
++
++  // Custom face expression geometry and animation
++    case Mode::Happy:
++      drawHappyArc(lx, eyeY - 2, 48, 36);
++      drawHappyArc(rx, eyeY - 2, 48, 36);
++      drawTalkingBlobMouth(42, 18);
+       break;
+-    case Mode::Looking:
+-      // Vision/camera state: big attentive eyes, no head motion.
+-      eyeColor = TFT_CYAN;
+-      accent = TFT_BLUE;
+-      pupilDx = triWave(frame_ * 5, 16);
+-      pupilDy = triWave(frame_ * 3, 5);
+-      mouthW = 30;
+-      mouthH = 4;
+-      mouthY = cy + 50;
++
++  // Custom face expression geometry and animation
++    case Mode::Excited: {
++      int bounce = (frame_ % 6 < 3) ? -3 : 0;
++      drawSqueezeEye(lx, eyeY + bounce, true);
++      drawSqueezeEye(rx, eyeY + bounce, false);
++      drawTalkingBlobMouth(46, 24);
+       break;
+-    case Mode::Happy:
+-    case Mode::Found:
+-      eyeColor = TFT_YELLOW;
+-      accent = TFT_ORANGE;
+-      smile = true;
+-      mouthW = 92;
+-      mouthH = 8;
++    }
++
++  // Custom face expression geometry and animation
++    case Mode::Laughing: {
++      int shake = (frame_ % 4 < 2) ? -2 : 2;
++      drawSqueezeEye(lx, eyeY + shake, true);
++      drawSqueezeEye(rx, eyeY - shake, false);
++      drawTalkingBlobMouth(54, 30);
++      break;
++    }
++
++  // Custom face expression geometry and animation
++    case Mode::Sad:
++      drawEilikEye(lx, eyeY + 6, 46, 54);
++      drawEilikEye(rx, eyeY + 6, 46, 54);
++      d.fillTriangle(lx - 25, eyeY - 26, lx + 25, eyeY - 26, lx - 25, eyeY + 4, TFT_BLACK);
++      d.fillTriangle(rx + 25, eyeY - 26, rx - 25, eyeY - 26, rx + 25, eyeY + 4, TFT_BLACK);
++      break;
++
++  // Custom face expression geometry and animation
++    case Mode::Crying: {
++      drawHappyArc(lx, eyeY + 4, 46, 32);
++      drawHappyArc(rx, eyeY + 4, 46, 32);
++      int drop = (frame_ * 3) % 20;
++      d.fillRoundRect(lx - 6, eyeY + 16, 12, 24 + drop, 6, cyan);
++      d.fillRoundRect(rx - 6, eyeY + 16, 12, 24 + drop, 6, cyan);
++      drawTalkingBlobMouth(44, 20);
++      break;
++    }
++
++  // Custom face expression geometry and animation
++    case Mode::Surprised:
++      drawEilikEye(lx, eyeY - 6, 52, 68);
++      drawEilikEye(rx, eyeY - 6, 52, 68);
++      d.fillCircle(cx, mouthY, 14, cyan);
+       break;
++
++  // Custom face expression geometry and animation
++    case Mode::Scared: {
++      int tremor = (frame_ % 4 < 2) ? -2 : 2;
++      drawEilikEye(lx + tremor, eyeY, 34, 44);
++      drawEilikEye(rx + tremor, eyeY, 34, 44);
++      d.fillCircle(cx, mouthY, 8, cyan);
++      break;
++    }
++
++  // Custom face expression geometry and animation
+     case Mode::Angry:
+-      eyeColor = TFT_RED;
+-      accent = TFT_ORANGE;
+-      frown = true;
+-      mouthW = 72;
+-      mouthH = 6;
++      drawAngryDroplet(lx, eyeY, true);
++      drawAngryDroplet(rx, eyeY, false);
+       break;
+-    case Mode::Error:
+-      eyeColor = TFT_RED;
+-      accent = TFT_RED;
+-      frown = true;
+-      mouthW = 56;
+-      mouthH = 6;
++
++  // Custom face expression geometry and animation
++    case Mode::Annoyed:
++      drawEilikEye(lx, eyeY, 48, 58);
++      drawEilikEye(rx, eyeY, 48, 58);
++      d.fillRect(lx - 26, eyeY - 32, 52, 25, TFT_BLACK);
++      d.fillRect(rx - 26, eyeY - 32, 52, 25, TFT_BLACK);
+       break;
+-    case Mode::Sleep:
+-      eyeColor = TFT_DARKGREY;
+-      accent = TFT_NAVY;
+-      closed = true;
+-      mouthW = 40;
+-      mouthH = 4;
++
++  // Custom face expression geometry and animation
++    case Mode::Bored:
++      d.fillRoundRect(lx - 22, eyeY, 44, 14, 7, cyan);
++      d.fillRoundRect(rx - 22, eyeY, 44, 14, 7, cyan);
+       break;
+-    case Mode::Neutral:
+-    default:
+-      // Occasional soft blink in idle.
+-      closed = ((frame_ / 55) % 18) == 0;
++
++  // Custom face expression geometry and animation
++    case Mode::Embarrassed:
++      drawEilikEye(lx, eyeY + 4, 40, 50);
++      drawEilikEye(rx, eyeY + 4, 40, 50);
++      d.fillRoundRect(lx - 24, eyeY + 28, 18, 8, 4, blushPink);
++      d.fillRoundRect(rx + 6, eyeY + 28, 18, 8, 4, blushPink);
+       break;
+-  }
+ 
+-  // Subtle cheek/accent dots.
+-  d.fillCircle(cx - 92, cy + 22, 5, accent);
+-  d.fillCircle(cx + 92, cy + 22, 5, accent);
+-
+-  const int lx = cx - 58;
+-  const int rx = cx + 58;
+-  const int ey = cy - 26;
+-  if (closed) {
+-    d.fillRect(lx - 24, ey - 2, 48, 5, eyeColor);
+-    d.fillRect(rx - 24, ey - 2, 48, 5, eyeColor);
+-  } else {
+-    // Camera/looking mode should be visibly different: wider "aperture" eyes
+-    // make it obvious that StackChan is looking, while servo/head stays still.
+-    const int eyeR = (mode_ == Mode::Looking) ? 34 : 25;
+-    const int pupilR = (mode_ == Mode::Looking) ? 12 : 10;
+-    d.fillCircle(lx, ey, eyeR, eyeColor);
+-    d.fillCircle(rx, ey, eyeR, eyeColor);
+-    d.fillCircle(lx + pupilDx, ey + pupilDy, pupilR, TFT_BLACK);
+-    d.fillCircle(rx + pupilDx, ey + pupilDy, pupilR, TFT_BLACK);
+-  }
++  // Custom face expression geometry and animation
++    case Mode::Curious:
++      drawEilikEye(lx, eyeY - 8, 50, 66);
++      drawEilikEye(rx, eyeY + 2, 38, 48);
++      break;
+ 
+-  if (mode_ == Mode::Angry || mode_ == Mode::Error) {
+-    d.drawLine(lx - 28, ey - 36, lx + 18, ey - 24, accent);
+-    d.drawLine(rx - 18, ey - 24, rx + 28, ey - 36, accent);
+-  } else if (mode_ == Mode::Thinking || mode_ == Mode::Looking) {
+-    d.drawLine(lx - 22, ey - 34, lx + 18, ey - 38, accent);
+-    d.drawLine(rx - 18, ey - 38, rx + 22, ey - 34, accent);
+-  }
++  // Custom face expression geometry and animation
++    case Mode::Dizzy: {
++      for (int r = 24; r >= 8; r -= 7) {
++        d.drawCircle(lx, eyeY, r, cyan);
++        d.drawCircle(rx, eyeY, r, cyan);
++      }
++      break;
++    }
++
++  // Custom face expression geometry and animation
++    case Mode::Love: {
++      int pulse = (frame_ % 14 < 7) ? 4 : 0;
++      drawHeart(lx, eyeY, 48 + pulse);
++      drawHeart(rx, eyeY, 48 + pulse);
++      break;
++    }
+ 
+-  if (talking) {
+-    // Viseme-ish talking mouth: vary width/height and leave a dark inner mouth,
+-    // so speech is visually obvious rather than a single static open blob.
+-    const int openH[] = {8, 28, 14, 36, 10, 24, 18, 32};
+-    const int openW[] = {46, 70, 88, 58, 42, 82, 64, 74};
+-    int ow = openW[talkShape];
+-    int oh = openH[talkShape];
+-    int y = mouthY + triWave(frame_ * 22, 3);
+-    d.fillRoundRect(cx - ow / 2 - 6, y - oh / 2 - 5, ow + 12, oh + 10, 12, accent);
+-    d.fillRoundRect(cx - ow / 2, y - oh / 2, ow, oh, 9, TFT_BLACK);
+-    if (oh > 22) {
+-      d.fillRect(cx - ow / 2 + 10, y - oh / 2 + 3, ow - 20, 4, TFT_WHITE);
++  // Custom face expression geometry and animation
++    case Mode::Sleep:
++      d.fillRoundRect(lx - 22, eyeY + 8, 44, 8, 4, cyanSoft);
++      d.fillRoundRect(rx - 22, eyeY + 8, 44, 8, 4, cyanSoft);
++      d.setTextSize(2);
++      d.setTextColor(cyanSoft);
++      d.setCursor(cx + 64, cy - 42 - ((frame_ / 10) % 8));
++      d.print("zZ");
++      break;
++
++  // Custom face expression geometry and animation
++    case Mode::Thinking: {
++      int driftX = triWave(frame_ * 3, 10);
++      drawEilikEye(lx + driftX, eyeY - 14, 42, 52);
++      drawEilikEye(rx + driftX, eyeY - 14, 42, 52);
++      break;
+     }
+-    if ((talkShape % 4) == 1) {
+-      d.fillCircle(cx, y + oh / 2 - 5, min(14, oh / 3), TFT_RED);
++
++  // Custom face expression geometry and animation
++    case Mode::Listening:
++      drawEilikEye(lx, eyeY - 2, 48, 60);
++      drawEilikEye(rx, eyeY - 2, 48, 60);
++      break;
++
++  // Custom face expression geometry and animation
++    case Mode::Looking: {
++      int shiftX = (frame_ % 80 < 40) ? -16 : 16;
++      drawEilikEye(lx + shiftX, eyeY, 46, 58);
++      drawEilikEye(rx + shiftX, eyeY, 46, 58);
++      break;
+     }
+-  } else if (smile) {
+-    d.fillRect(cx - mouthW / 2, mouthY, mouthW, mouthH, eyeColor);
+-    d.fillCircle(cx - mouthW / 2, mouthY, mouthH, TFT_BLACK);
+-    d.fillCircle(cx + mouthW / 2, mouthY, mouthH, TFT_BLACK);
+-    d.fillCircle(cx, mouthY - 10, 34, TFT_BLACK);
+-  } else if (frown) {
+-    d.fillRect(cx - mouthW / 2, mouthY, mouthW, mouthH, eyeColor);
+-    d.fillCircle(cx, mouthY + 15, 36, TFT_BLACK);
+-  } else {
+-    d.fillRect(cx - mouthW / 2, mouthY - mouthH / 2, mouthW, mouthH, eyeColor);
+-    d.fillCircle(cx - mouthW / 2, mouthY, mouthH / 2, eyeColor);
+-    d.fillCircle(cx + mouthW / 2, mouthY, mouthH / 2, eyeColor);
+-  }
+ 
+-  if (mode_ == Mode::Sleep) {
+-    d.setTextSize(2);
+-    d.setTextColor(TFT_DARKCYAN);
+-    d.setCursor(cx + 78, cy - 64);
+-    d.print("Zz");
++  // Custom face expression geometry and animation
++    case Mode::Found:
++      drawEilikEye(lx, eyeY - 4, 50, 66);
++      drawEilikEye(rx, eyeY - 4, 50, 66);
++      drawTalkingBlobMouth(46, 22);
++      break;
++
++  // Custom face expression geometry and animation
++    case Mode::Error: {
++      auto drawBoldX = [&](int x, int y) {
++        for (int i = -14; i <= 14; i++) {
++          d.fillCircle(x + i, y + i, 4, cyan);
++          d.fillCircle(x + i, y - i, 4, cyan);
++        }
++      };
++      drawBoldX(lx, eyeY);
++      drawBoldX(rx, eyeY);
++      break;
++    }
+   }
+ 
+   canvas.pushSprite(&display, 0, 0);
+ }
+-
+ void EmotionController::renderNeutral() {
+   uint8_t v = wave8(frame_ * 2, 4, 18);
+   setAll(0, 0, v);
+diff --git a/src/EmotionController.h b/src/EmotionController.h
+index 7ee1de2..4f5b8ab 100644
+--- a/src/EmotionController.h
++++ b/src/EmotionController.h
+@@ -10,6 +10,8 @@ class EmotionController {
+   bool setEmotion(const String& emotion);
+   const String& currentEmotion() const { return current_; }
+   void loop();
++  void holdDisplay();
++  void releaseDisplay();
+ 
+  private:
+   enum class Mode {
+@@ -19,7 +21,19 @@ class EmotionController {
+     Thinking,
+     Looking,
+     Happy,
++    Excited,
++    Laughing,
++    Sad,
++    Crying,
++    Surprised,
++    Scared,
+     Angry,
++    Annoyed,
++    Bored,
++    Embarrassed,
++    Curious,
++    Dizzy,
++    Love,
+     Found,
+     Error,
+     Sleep,
+@@ -33,6 +47,7 @@ class EmotionController {
+   uint16_t frame_ = 0;
+   bool sleepDisplayOff_ = false;
+   uint8_t savedDisplayBrightness_ = 127;
++  bool displayHold_ = false;
+ 
+   static Mode parseMode(const String& emotion, String& normalized);
+   static void hsvToRgb(uint8_t h, uint8_t s, uint8_t v, uint8_t& r, uint8_t& g, uint8_t& b);
